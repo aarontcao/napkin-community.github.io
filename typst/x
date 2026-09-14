@@ -4,6 +4,17 @@ set -euo pipefail; IFS=$'\n\t'
 # Change to the directory of the script
 cd "${0%/*}"
 
+# Function to check that every named command is available
+#
+# Usage: require <command>...
+require() {
+  local cmd status=0
+  for cmd in "$@"; do
+    command -v "${cmd}" > /dev/null || status=1
+  done
+  return "${status}"
+}
+
 # Function to display help message and exit
 #
 # Usage: show_help_then_exit [exit_code]
@@ -46,7 +57,7 @@ case "${1}" in
     #
     # Check if dependencies are installed
     #
-    if ! which -s curl jq perl; then
+    if ! require curl jq perl; then
       echo "Error: Please install 'curl', 'jq', and 'perl'"
       exit 1
     fi
@@ -119,7 +130,7 @@ print ")\n";
   #
   check)
     # Check if dependencies are installed
-    if ! which -s typst find xargs; then
+    if ! require typst find xargs; then
       echo "Error: Please install 'typst', 'find', and 'xargs'"
       exit 1
     fi
@@ -128,7 +139,7 @@ print ")\n";
     typst compile --font-path fonts - - > /dev/null <<< '#import "@preview/fletcher:0.5.7"'
     # Parallel build
     find . -maxdepth 1 -name '*.typ' -print0 |
-      xargs -0 -P0 -I{} bash -c 'echo "Checking {} ..." && typst compile -f pdf "{}" /dev/null' || {
+      xargs -0 -P0 -I{} bash -c 'echo "Checking {} ..." && typst compile --font-path fonts -f pdf "{}" /dev/null' || {
         echo "Typst source file is invalid."
         exit 1
       }
@@ -142,7 +153,7 @@ print ")\n";
   #
   prepare-fonts)
     # Check if dependencies are installed
-    if ! which -s sha256sum; then
+    if ! require sha256sum; then
       echo "Error: Please install 'sha256sum'"
       exit 1
     fi
@@ -230,7 +241,7 @@ EOF
     fi
 
     # Check if dependencies are installed
-    if ! which -s curl tar xz; then
+    if ! require curl tar xz; then
       echo "Error: Please install 'curl', 'tar', and 'xz'"
       exit 1
     fi
